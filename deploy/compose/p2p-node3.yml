@@ -1,0 +1,48 @@
+version: '3.8'
+
+networks:
+  distributed:
+    driver: bridge
+
+services:
+  # P2P Node for node3 (entrained-ai-2)
+  distributed-node3:
+    image: distributed:latest
+    container_name: distributed-node3
+    hostname: node3
+    networks:
+      distributed:
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv6.conf.all.forwarding=1
+    environment:
+      DISTRIBUTED_NODE_ID: "node3"
+      DISTRIBUTED_NODE_GEO_LOCATION: "us-east"
+      DISTRIBUTED_P2P_LISTEN_ADDRS: "/ip4/0.0.0.0/tcp/4001"
+      DISTRIBUTED_P2P_ENABLE_MDNS: "false"
+      DISTRIBUTED_P2P_ENABLE_DHT: "true"
+      DISTRIBUTED_P2P_BOOTSTRAP_PEERS: ""
+      DISTRIBUTED_WIREGUARD_ENABLED: "false"
+      DISTRIBUTED_LLM_BACKEND: "llamacpp"
+      # Connect to all 3 local llama servers
+      DISTRIBUTED_LLM_LLAMACPP_URLS: "http://host.docker.internal:8080/v1,http://host.docker.internal:8081/v1,http://host.docker.internal:8082/v1"
+      DISTRIBUTED_LLM_MODEL_ID: "llama-3.1-8b"
+      DISTRIBUTED_GATEWAY_ENABLED: "true"
+      DISTRIBUTED_GATEWAY_LISTEN_ADDR: ":8088"
+      DISTRIBUTED_LOG_LEVEL: "debug"
+    ports:
+      - "4001:4001"      # P2P
+      - "8088:8088"      # Gateway
+      - "9090:9090"      # Metrics
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - node3-p2p-data:/var/lib/distributed
+      - /lib/modules:/lib/modules:ro
+    restart: unless-stopped
+
+volumes:
+  node3-p2p-data:

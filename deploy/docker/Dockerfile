@@ -28,6 +28,7 @@ RUN apk add --no-cache \
     wireguard-tools \
     bash \
     curl \
+    su-exec \
     && rm -rf /var/cache/apk/*
 
 # Install wireguard-go for userspace fallback
