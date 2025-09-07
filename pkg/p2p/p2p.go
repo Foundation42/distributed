@@ -127,7 +127,6 @@ func NewNode(cfg *config.P2PConfig, logger *zap.Logger) (*Node, error) {
 		libp2p.Transport(libp2pquic.NewTransport),
 		libp2p.ConnectionManager(connMgr),
 		libp2p.NATPortMap(),
-		libp2p.EnableAutoRelay(),
 		libp2p.EnableHolePunching(),
 	)
 	if err != nil {
