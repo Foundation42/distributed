@@ -1,0 +1,202 @@
+version: '3.8'
+
+networks:
+  distributed:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+services:
+  # Node 1 - US East
+  node1:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
+    container_name: distributed-node1
+    hostname: node1
+    networks:
+      distributed:
+        ipv4_address: 172.28.1.10
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv6.conf.all.forwarding=1
+    environment:
+      DISTRIBUTED_NODE_GEO_LOCATION: "us-east"
+      DISTRIBUTED_P2P_LISTEN_ADDRS: "/ip4/0.0.0.0/tcp/4001"
+      DISTRIBUTED_P2P_ENABLE_MDNS: "true"
+      DISTRIBUTED_P2P_ENABLE_DHT: "true"
+      DISTRIBUTED_WIREGUARD_ENABLED: "true"
+      DISTRIBUTED_WIREGUARD_LISTEN_PORT: "51820"
+      DISTRIBUTED_LLM_BACKEND: "llamacpp"
+      DISTRIBUTED_LLM_LLAMACPP_URL: "http://llama1:8080/v1"
+      DISTRIBUTED_LLM_MODEL_ID: "llama-3.1-8b"
+      DISTRIBUTED_GATEWAY_ENABLED: "true"
+      DISTRIBUTED_GATEWAY_LISTEN_ADDR: ":8088"
+      ENABLE_WIREGUARD: "true"
+      REQUIRE_ROOT: "true"
+    ports:
+      - "4001:4001"      # P2P
+      - "51820:51820/udp" # WireGuard
+      - "8088:8088"      # Gateway
+      - "9090:9090"      # Metrics
+    volumes:
+      - node1-data:/var/lib/distributed
+      - /lib/modules:/lib/modules:ro
+    depends_on:
+      - llama1
+    restart: unless-stopped
+
+  # LLama.cpp server for Node 1
+  llama1:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.llamacpp
+    container_name: llama1
+    hostname: llama1
+    networks:
+      distributed:
+        ipv4_address: 172.28.1.11
+    volumes:
+      - ../../models:/models:ro
+    command: [
+      "--model", "/models/llama-3.1-8b-q5_K_M.gguf",
+      "--host", "0.0.0.0",
+      "--port", "8080",
+      "--ctx-size", "8192",
+      "--parallel", "4",
+      "--n-gpu-layers", "-1"
+    ]
+    restart: unless-stopped
+
+  # Node 2 - US West
+  node2:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
+    container_name: distributed-node2
+    hostname: node2
+    networks:
+      distributed:
+        ipv4_address: 172.28.2.10
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv6.conf.all.forwarding=1
+    environment:
+      DISTRIBUTED_NODE_GEO_LOCATION: "us-west"
+      DISTRIBUTED_P2P_LISTEN_ADDRS: "/ip4/0.0.0.0/tcp/4001"
+      DISTRIBUTED_P2P_ENABLE_MDNS: "true"
+      DISTRIBUTED_P2P_ENABLE_DHT: "true"
+      DISTRIBUTED_WIREGUARD_ENABLED: "true"
+      DISTRIBUTED_WIREGUARD_LISTEN_PORT: "51820"
+      DISTRIBUTED_LLM_BACKEND: "llamacpp"
+      DISTRIBUTED_LLM_LLAMACPP_URL: "http://llama2:8080/v1"
+      DISTRIBUTED_LLM_MODEL_ID: "llama-3.1-8b"
+      DISTRIBUTED_GATEWAY_ENABLED: "false"
+      ENABLE_WIREGUARD: "true"
+      REQUIRE_ROOT: "true"
+    ports:
+      - "4002:4001"      # P2P
+      - "51821:51820/udp" # WireGuard
+      - "9091:9090"      # Metrics
+    volumes:
+      - node2-data:/var/lib/distributed
+      - /lib/modules:/lib/modules:ro
+    depends_on:
+      - llama2
+    restart: unless-stopped
+
+  # LLama.cpp server for Node 2
+  llama2:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.llamacpp
+    container_name: llama2
+    hostname: llama2
+    networks:
+      distributed:
+        ipv4_address: 172.28.2.11
+    volumes:
+      - ../../models:/models:ro
+    command: [
+      "--model", "/models/llama-3.1-8b-q5_K_M.gguf",
+      "--host", "0.0.0.0",
+      "--port", "8080",
+      "--ctx-size", "8192",
+      "--parallel", "4",
+      "--n-gpu-layers", "-1"
+    ]
+    restart: unless-stopped
+
+  # Node 3 - EU Central
+  node3:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
+    container_name: distributed-node3
+    hostname: node3
+    networks:
+      distributed:
+        ipv4_address: 172.28.3.10
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv6.conf.all.forwarding=1
+    environment:
+      DISTRIBUTED_NODE_GEO_LOCATION: "eu-central"
+      DISTRIBUTED_P2P_LISTEN_ADDRS: "/ip4/0.0.0.0/tcp/4001"
+      DISTRIBUTED_P2P_ENABLE_MDNS: "true"
+      DISTRIBUTED_P2P_ENABLE_DHT: "true"
+      DISTRIBUTED_WIREGUARD_ENABLED: "true"
+      DISTRIBUTED_WIREGUARD_LISTEN_PORT: "51820"
+      DISTRIBUTED_LLM_BACKEND: "llamacpp"
+      DISTRIBUTED_LLM_LLAMACPP_URL: "http://llama3:8080/v1"
+      DISTRIBUTED_LLM_MODEL_ID: "llama-3.1-8b"
+      DISTRIBUTED_GATEWAY_ENABLED: "false"
+      ENABLE_WIREGUARD: "true"
+      REQUIRE_ROOT: "true"
+    ports:
+      - "4003:4001"      # P2P
+      - "51822:51820/udp" # WireGuard
+      - "9092:9090"      # Metrics
+    volumes:
+      - node3-data:/var/lib/distributed
+      - /lib/modules:/lib/modules:ro
+    depends_on:
+      - llama3
+    restart: unless-stopped
+
+  # LLama.cpp server for Node 3
+  llama3:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.llamacpp
+    container_name: llama3
+    hostname: llama3
+    networks:
+      distributed:
+        ipv4_address: 172.28.3.11
+    volumes:
+      - ../../models:/models:ro
+    command: [
+      "--model", "/models/llama-3.1-8b-q5_K_M.gguf",
+      "--host", "0.0.0.0",
+      "--port", "8080",
+      "--ctx-size", "8192",
+      "--parallel", "4",
+      "--n-gpu-layers", "-1"
+    ]
+    restart: unless-stopped
+
+volumes:
+  node1-data:
+  node2-data:
+  node3-data:

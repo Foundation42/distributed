@@ -1,0 +1,113 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+/distributed
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Go workspace file
+go.work
+
+# Dependency directories
+vendor/
+
+# Build directories
+build/
+dist/
+bin/
+
+# IDE specific files
+.idea/
+*.swp
+*.swo
+*~
+.vscode/
+*.iml
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Docker
+*.log
+docker-compose.override.yml
+.docker/
+
+# Models (too large for git)
+models/*.gguf
+models/*.bin
+models/*.safetensors
+*.gguf
+*.bin
+*.safetensors
+
+# Data directories
+/var/
+/data/
+/tmp/
+
+# WireGuard keys
+*.key
+*.psk
+*_privatekey
+*_publickey
+
+# Certificates
+*.pem
+*.crt
+*.key
+*.p12
+*.pfx
+
+# Logs
+logs/
+*.log
+
+# Metrics and profiling
+*.pprof
+*.prof
+*.heap
+
+# Generated files
+*.pb.go
+*.pb.gw.go
+*_grpc.pb.go
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
+*.cache
+
+# Sketch and planning documents (as requested)
+sketch/
+Distributed.md
+
+# Node data volumes
+node*-data/
+
+# Coverage reports
+coverage.txt
+coverage.html
+.coverage/
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# Kubernetes
+kubeconfig
+*.kubeconfig

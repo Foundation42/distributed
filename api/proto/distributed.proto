@@ -1,0 +1,129 @@
+syntax = "proto3";
+
+package distributed;
+
+option go_package = "github.com/Foundation42/distributed/api/proto";
+
+// Service discovery and peer information
+message PeerInfo {
+  string peer_id = 1;
+  string model_id = 2;
+  int32 context_size = 3;
+  int32 tokens_per_second = 4;
+  string geo_location = 5;
+  
+  // WireGuard configuration
+  message WireGuardConfig {
+    string public_key = 1;
+    string ip_address = 2;
+    repeated string endpoint_candidates = 3;
+    repeated string allowed_routes = 4;
+  }
+  WireGuardConfig wg_config = 6;
+  
+  // Resource capabilities
+  message Capabilities {
+    int64 vram_gb = 1;
+    bool fp16_support = 2;
+    bool bf16_support = 3;
+    int32 max_batch_size = 4;
+  }
+  Capabilities capabilities = 7;
+  
+  // Health metrics
+  message Health {
+    int64 uptime_seconds = 1;
+    int32 queue_depth = 2;
+    float load_average = 3;
+    int64 last_heartbeat = 4;
+  }
+  Health health = 8;
+}
+
+// LLM service definition
+service LLMService {
+  rpc Generate(GenerateRequest) returns (stream GenerateResponse);
+  rpc Embeddings(EmbeddingsRequest) returns (EmbeddingsResponse);
+  rpc GetHealth(HealthRequest) returns (HealthResponse);
+}
+
+message GenerateRequest {
+  string model_id = 1;
+  string prompt = 2;
+  int32 max_tokens = 3;
+  float temperature = 4;
+  float top_p = 5;
+  int32 top_k = 6;
+  map<string, string> metadata = 7;
+}
+
+message GenerateResponse {
+  string text = 1;
+  int32 token_id = 2;
+  bool is_final = 3;
+  GenerationStats stats = 4;
+}
+
+message GenerationStats {
+  int32 prompt_tokens = 1;
+  int32 completion_tokens = 2;
+  float time_to_first_token_ms = 3;
+  float tokens_per_second = 4;
+}
+
+message EmbeddingsRequest {
+  string model_id = 1;
+  repeated string texts = 2;
+}
+
+message EmbeddingsResponse {
+  repeated Embedding embeddings = 1;
+}
+
+message Embedding {
+  repeated float values = 1;
+  int32 dimension = 2;
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  bool healthy = 1;
+  PeerInfo peer_info = 2;
+}
+
+// Scheduler service for workload distribution
+service Scheduler {
+  rpc SelectPeer(SelectPeerRequest) returns (SelectPeerResponse);
+  rpc RegisterPeer(RegisterPeerRequest) returns (RegisterPeerResponse);
+  rpc UpdateMetrics(UpdateMetricsRequest) returns (UpdateMetricsResponse);
+}
+
+message SelectPeerRequest {
+  string model_id = 1;
+  int32 required_context = 2;
+  map<string, string> preferences = 3;
+}
+
+message SelectPeerResponse {
+  PeerInfo selected_peer = 1;
+  repeated PeerInfo alternatives = 2;
+}
+
+message RegisterPeerRequest {
+  PeerInfo peer_info = 1;
+}
+
+message RegisterPeerResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message UpdateMetricsRequest {
+  string peer_id = 1;
+  PeerInfo.Health health = 2;
+}
+
+message UpdateMetricsResponse {
+  bool success = 1;
+}
