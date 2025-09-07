@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/Foundation42/distributed/pkg/config"
@@ -240,7 +241,7 @@ func (g *Gateway) handleDistributedGenerate(w http.ResponseWriter, r *http.Reque
 		RequiredContext: 2048, // Default minimum
 	}
 	
-	peer, err := g.scheduler.SelectPeer(r.Context(), criteria)
+	_, err := g.scheduler.SelectPeer(r.Context(), criteria)
 	if err != nil {
 		g.errorCount.Inc()
 		http.Error(w, fmt.Sprintf("No peers available: %v", err), http.StatusServiceUnavailable)
@@ -330,6 +331,7 @@ func (g *Gateway) handleChatCompletions(w http.ResponseWriter, r *http.Request) 
 		prompt += fmt.Sprintf("%s: %s\n", msg.Role, msg.Content)
 	}
 	
+	// Create a new request with the converted prompt
 	genReq := &GenerateRequest{
 		Prompt:      prompt,
 		MaxTokens:   req.MaxTokens,
@@ -338,7 +340,19 @@ func (g *Gateway) handleChatCompletions(w http.ResponseWriter, r *http.Request) 
 		ModelID:     req.Model,
 	}
 	
-	g.handleGenerate(w, r.WithContext(r.Context()), genReq)
+	// Marshal the new request and create a new request body
+	jsonData, err := json.Marshal(genReq)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	
+	// Create new request with the converted prompt
+	newReq := r.Clone(r.Context())
+	newReq.Body = io.NopCloser(strings.NewReader(string(jsonData)))
+	newReq.ContentLength = int64(len(jsonData))
+	
+	g.handleGenerate(w, newReq)
 }
 
 func (g *Gateway) handleEmbeddings(w http.ResponseWriter, r *http.Request) {

@@ -22,7 +22,7 @@ import (
 	"github.com/libp2p/go-libp2p/p2p/security/noise"
 	libp2ptls "github.com/libp2p/go-libp2p/p2p/security/tls"
 	"github.com/libp2p/go-libp2p/p2p/transport/tcp"
-	"github.com/libp2p/go-libp2p/p2p/transport/quic"
+	libp2pquic "github.com/libp2p/go-libp2p/p2p/transport/quic"
 	"github.com/multiformats/go-multiaddr"
 	"go.uber.org/zap"
 )
@@ -124,7 +124,7 @@ func NewNode(cfg *config.P2PConfig, logger *zap.Logger) (*Node, error) {
 		libp2p.Security(libp2ptls.ID, libp2ptls.New),
 		libp2p.Security(noise.ID, noise.New),
 		libp2p.Transport(tcp.NewTCPTransport),
-		libp2p.Transport(quic.NewTransport),
+		libp2p.Transport(libp2pquic.NewTransport),
 		libp2p.ConnectionManager(connMgr),
 		libp2p.NATPortMap(),
 		libp2p.EnableAutoRelay(),

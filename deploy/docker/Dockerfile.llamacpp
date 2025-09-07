@@ -1,5 +1,5 @@
 # Build llama.cpp on Alpine
-FROM alpine:3.19 AS builder
+FROM alpine:3.22 AS builder
 
 # Install build dependencies
 RUN apk add --no-cache \
@@ -7,7 +7,8 @@ RUN apk add --no-cache \
     build-base \
     cmake \
     linux-headers \
-    openblas-dev
+    openblas-dev \
+    curl-dev
 
 # Clone and build llama.cpp
 WORKDIR /build
@@ -17,11 +18,11 @@ WORKDIR /build/llama.cpp
 # Build with OpenBLAS support
 RUN mkdir build && \
     cd build && \
-    cmake .. -DLLAMA_BLAS=ON -DLLAMA_BLAS_VENDOR=OpenBLAS && \
+    cmake .. -DLLAMA_BLAS=ON -DLLAMA_BLAS_VENDOR=OpenBLAS -DLLAMA_CURL=OFF && \
     cmake --build . --config Release
 
 # Final stage
-FROM alpine:3.19
+FROM alpine:3.22
 
 # Install runtime dependencies
 RUN apk add --no-cache \
@@ -31,7 +32,7 @@ RUN apk add --no-cache \
     && rm -rf /var/cache/apk/*
 
 # Copy binaries
-COPY --from=builder /build/llama.cpp/build/bin/server /usr/local/bin/llama-server
+COPY --from=builder /build/llama.cpp/build/bin/llama-server /usr/local/bin/llama-server
 
 # Create model directory
 RUN mkdir -p /models
