@@ -15,10 +15,10 @@ WORKDIR /build
 RUN git clone https://github.com/ggerganov/llama.cpp.git
 WORKDIR /build/llama.cpp
 
-# Build with OpenBLAS support
+# Build with OpenBLAS support (static build)
 RUN mkdir build && \
     cd build && \
-    cmake .. -DLLAMA_BLAS=ON -DLLAMA_BLAS_VENDOR=OpenBLAS -DLLAMA_CURL=OFF && \
+    cmake .. -DLLAMA_BLAS=ON -DLLAMA_BLAS_VENDOR=OpenBLAS -DLLAMA_CURL=OFF -DLLAMA_STATIC=ON && \
     cmake --build . --config Release
 
 # Final stage
@@ -31,8 +31,14 @@ RUN apk add --no-cache \
     openblas \
     && rm -rf /var/cache/apk/*
 
-# Copy binaries
+# Copy binary and shared libraries
 COPY --from=builder /build/llama.cpp/build/bin/llama-server /usr/local/bin/llama-server
+COPY --from=builder /build/llama.cpp/build/bin/*.so /usr/local/lib/
+
+# Copy wrapper script and ensure it has proper line endings
+COPY deploy/docker/llama-wrapper.sh /usr/local/bin/llama-wrapper.sh
+RUN chmod +x /usr/local/bin/llama-wrapper.sh && \
+    dos2unix /usr/local/bin/llama-wrapper.sh 2>/dev/null || true
 
 # Create model directory
 RUN mkdir -p /models
@@ -45,7 +51,7 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
 
 # Default command
-ENTRYPOINT ["/usr/local/bin/llama-server"]
+ENTRYPOINT ["/usr/local/bin/llama-wrapper.sh"]
 CMD ["--host", "0.0.0.0", \
      "--port", "8080", \
      "--n-gpu-layers", "-1", \
