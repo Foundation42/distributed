@@ -1,0 +1,52 @@
+# Ignore model files
+models/
+*.gguf
+*.ggml
+*.bin
+*.safetensors
+
+# Ignore git files
+.git/
+.gitignore
+
+# Ignore documentation
+*.md
+docs/
+
+# Ignore test files
+*_test.go
+test/
+
+# Ignore temporary files
+*.tmp
+*.log
+*.swp
+*.swo
+*~
+
+# Ignore build artifacts
+/distributed
+/build/
+/dist/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Ignore IDE files
+.idea/
+.vscode/
+*.iml
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore Docker files from being copied into context
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Ignore deployment files
+deploy/compose/
+deploy/k8s/
